@@ -1,0 +1,42 @@
+import bluetooth
+
+def send_command(cmd):
+    bt_socket.send(cmd + "\n")
+
+server_socket = bluetooth.BluetoothSocket(bluetooth.RFCOMM)
+server_socket.bind(("", bluetooth.PORT_ANY))
+server_socket.listen(1)
+
+port = server_socket.getsockname()[1]
+
+uuid = "00001101-0000-1000-8000-00805F9B34FB"
+
+bluetooth.advertise_service(server_socket, "ObstacleAvoidanceService", service_id=uuid, service_classes=[uuid, bluetooth.SERIAL_PORT_CLASS], profiles=[bluetooth.SERIAL_PORT_PROFILE])
+
+print("Waiting for connection on RFCOMM channel", port)
+
+client_socket, client_info = server_socket.accept()
+print("Accepted connection from", client_info)
+
+try:
+    while True:
+        data = client_socket.recv(1024).decode().strip()
+        if data == "F":
+            print("Moving Forward")
+            send_command("F")
+        elif data == "B":
+            print("Moving Backward")
+            send_command("B")
+        elif data == "R":
+            print("Turning Right")
+            send_command("R")
+        elif data == "S":
+            print("Stopping")
+            send_command("S")
+        elif data == "P":
+            print("Playing Sound")
+            send_command("P")
+except KeyboardInterrupt:
+    print("Closing connection...")
+    client_socket.close()
+    server_socket.close()
